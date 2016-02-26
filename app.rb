@@ -1,6 +1,8 @@
 require 'bundler'
 Bundler.require
 
+require 'json'
+
 # load the Database and User model
 require './model'
 
@@ -54,6 +56,7 @@ class SinatraWardenExample < Sinatra::Base
   end
 
   get '/' do
+    puts JSON.pretty_generate(request.env.select { |e| e[0..3] == 'HTTP'})
     erb :index
   end
 
@@ -88,9 +91,16 @@ class SinatraWardenExample < Sinatra::Base
     redirect '/auth/login'
   end
 
-  get '/protected' do
+  get '/index' do
     env['warden'].authenticate!
+    erb :pride
+  end
 
-    erb :protected
+  get '/detailstab.aspx' do
+    env['warden'].authenticate!
+    @nameSeq = params[:nameSeq]
+    @docSeq = params[:docSeq]
+
+    erb :detailstab, layout: false
   end
 end
