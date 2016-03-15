@@ -15,28 +15,29 @@ Warden::Strategies.add(:password) do
     user = User.first(username: params['user']['username'])
 
     if user.nil?
-      throw(:warden, message: "The username you entered does not exist.")
+      raise(:warden, message: 'The username you entered does not exist.')
     elsif user.authenticate(params['user']['password'])
       success!(user)
     else
-      throw(:warden, message: "The username and password combination ")
+      raise(:warden, message: 'The username and password combination ')
     end
   end
 end
 
+# the app
 class SinatraWardenExample < Sinatra::Base
   enable :sessions
   register Sinatra::Flash
-  set :session_secret, "supersecret"
+  set :session_secret, 'supersecret'
 
   use Warden::Manager do |config|
     # Tell Warden how to save our User info into a session.
     # Sessions can only take strings, not Ruby code, we'll store
     # the User's `id`
-    config.serialize_into_session{|user| user.id }
+    config.serialize_into_session(&:id)
     # Now tell Warden how to take what we've stored in the session
     # and get a User from that information.
-    config.serialize_from_session{|id| User.get(id) }
+    config.serialize_from_session { |id| User.get(id) }
 
     config.scope_defaults :default,
       # "strategies" is an array of named methods with which to
@@ -46,17 +47,17 @@ class SinatraWardenExample < Sinatra::Base
       # warden.authenticate! returns a false answer. We'll show
       # this route below.
       action: 'auth/unauthenticated'
-    # When a user tries to log in and cannot, this specifies the
-    # app to send the user to.
+      # When a user tries to log in and cannot, this specifies the
+      # app to send the user to
     config.failure_app = self
   end
 
-  Warden::Manager.before_failure do |env,opts|
+  Warden::Manager.before_failure do |env, opts|
     env['REQUEST_METHOD'] = 'POST'
   end
 
   get '/' do
-    puts JSON.pretty_generate(request.env.select { |e| e[0..3] == 'HTTP'})
+    puts JSON.pretty_generate(request.env.select { |e| e[0..3] == 'HTTP' })
     erb :index
   end
 
@@ -67,7 +68,7 @@ class SinatraWardenExample < Sinatra::Base
   post '/auth/login' do
     env['warden'].authenticate!
 
-    flash[:success] = "Successfully logged in"
+    flash[:success] = 'Successfully logged in'
 
     if session[:return_to].nil?
       redirect '/'
@@ -87,7 +88,7 @@ class SinatraWardenExample < Sinatra::Base
     session[:return_to] = env['warden.options'][:attempted_path] if session[:return_to].nil?
 
     # Set the error and use a fallback if the message is not defined
-    flash[:error] = env['warden.options'][:message] || "You must log in"
+    flash[:error] = env['warden.options'][:message] || 'You must log in'
     redirect '/auth/login'
   end
 
@@ -98,9 +99,24 @@ class SinatraWardenExample < Sinatra::Base
 
   get '/detailstab.aspx' do
     env['warden'].authenticate!
-    @nameSeq = params[:nameSeq]
-    @docSeq = params[:docSeq]
+    @name_seq = params[:nameSeq]
+    @doc_seq = params[:docSeq]
 
     erb :detailstab, layout: false
+  end
+
+  get '/details' do
+    env['warden'].authenticate!
+    erb :details, layout: false
+  end
+
+  get '/parties' do
+    env['warden'].authenticate!
+    erb :parties, layout: false
+  end
+
+  get '/properties' do
+    env['warden'].authenticate!
+    erb :properties, layout: false
   end
 end
